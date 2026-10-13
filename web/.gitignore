@@ -1,0 +1,6 @@
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# pdfjs worker (served from node_modules at runtime)
+/public/pdf.worker*.mjs

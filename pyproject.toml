@@ -1,0 +1,22 @@
+[project]
+name = "pagecite"
+version = "3.0.0"
+description = "PageCite: a private knowledge base for work documents with page-cited answers, built on LangGraph, Gemini 2.5 Flash, hybrid search over pgvector, and Clerk auth"
+authors = [
+    {name = "Leah"}
+]
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+exclude = [".venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E402", "E501"]

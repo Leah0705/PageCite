@@ -1,0 +1,115 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: pagecite
+      POSTGRES_PASSWORD: pagecite
+      POSTGRES_DB: pagecite
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pagecite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      ENVIRONMENT: docker
+      STORAGE_DIR: /app/storage
+      CORS_ORIGINS: http://localhost:3000
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://pagecite:pagecite@postgres:5432/pagecite
+    volumes:
+      - ./storage:/app/storage
+      - hf_cache:/root/.cache/huggingface
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  worker:
+    build: .
+    command: celery -A worker.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      ENVIRONMENT: docker
+      STORAGE_DIR: /app/storage
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://pagecite:pagecite@postgres:5432/pagecite
+    volumes:
+      - ./storage:/app/storage
+      - hf_cache:/root/.cache/huggingface
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  mcp:
+    build: .
+    command: python -m mcp_server
+    env_file:
+      - .env
+    environment:
+      ENVIRONMENT: docker
+      STORAGE_DIR: /app/storage
+      DATABASE_URL: postgresql://pagecite:pagecite@postgres:5432/pagecite
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./storage:/app/storage
+      - hf_cache:/root/.cache/huggingface
+    stdin_open: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+        NEXT_PUBLIC_CLERK_SIGN_IN_URL: /login
+    environment:
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  hf_cache:

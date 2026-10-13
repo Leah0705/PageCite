@@ -1,0 +1,59 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+.env.*
+!.env.example
+!web/.env.local.example
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# App data
+storage/
+chroma_db/
+data/
+
+# Logs
+*.log
+logs/
+
+# Evaluation output 
+eval/results/[0-9]*.json
+eval/__pycache__/
+
+# Credentials & keys
+*.pem
+*.key
+*.crt
+.aws/
+
+# Test artifacts
+testfile.pdf
+attention.pdf
+
+# Next.js (web/)
+web/.next/
+web/node_modules/
+web/*.tsbuildinfo
+web/.pnp
+web/.pnp.*
+web/coverage/
+web/out/
+web/build/
